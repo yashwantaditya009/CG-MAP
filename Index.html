@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chhattisgarh Interactive Map</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom styles for map transitions */
+        .map-path {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            stroke: white;
+            stroke-width: 2;
+        }
+        .map-path:hover {
+            opacity: 0.8;
+        }
+        .active-region {
+            filter: drop-shadow(0 20px 13px rgb(0 0 0 / 0.15));
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-emerald-800 text-white p-6 shadow-md z-10">
+        <div class="max-w-6xl mx-auto flex items-center gap-3">
+            <i data-lucide="map" class="text-emerald-300 w-8 h-8"></i>
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">Discover Chhattisgarh</h1>
+                <p class="text-emerald-200 text-sm">Interactive State Map & Information Portal</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8 flex flex-col md:flex-row gap-8 items-start">
+        
+        <!-- Left Column - Interactive Map -->
+        <div class="w-full md:w-1/2 bg-white rounded-2xl shadow-lg p-6 border border-slate-100 flex flex-col items-center">
+            <h2 class="text-xl font-semibold mb-2 text-slate-700 w-full text-center">Interactive Regional Map</h2>
+            <p class="text-sm text-slate-500 mb-6 text-center">Click on a division to explore its details</p>
+            
+            <div class="relative w-full max-w-[400px] aspect-[2/3] bg-blue-50/50 rounded-xl overflow-hidden border border-slate-100 flex items-center justify-center p-4">
+                <svg viewBox="0 0 400 600" class="w-full h-full drop-shadow-sm" id="map-svg">
+                    <g id="map-regions">
+                        <!-- Surguja -->
+                        <path id="surguja" d="M 180,20 Q 250,10 280,60 Q 310,100 290,140 Q 200,150 140,120 Q 120,70 180,20 Z" class="map-path fill-emerald-400" onclick="handleRegionClick('surguja')"></path>
+                        <!-- Bilaspur -->
+                        <path id="bilaspur" d="M 140,120 Q 200,150 290,140 Q 330,200 280,260 Q 150,280 110,230 Q 80,180 140,120 Z" class="map-path fill-blue-400" onclick="handleRegionClick('bilaspur')"></path>
+                        <!-- Durg -->
+                        <path id="durg" d="M 110,230 Q 150,280 190,270 Q 200,350 170,390 Q 90,380 60,310 Q 50,260 110,230 Z" class="map-path fill-orange-400" onclick="handleRegionClick('durg')"></path>
+                        <!-- Raipur -->
+                        <path id="raipur" d="M 190,270 Q 280,260 310,320 Q 330,380 260,400 Q 200,390 170,390 Q 200,350 190,270 Z" class="map-path fill-purple-400" onclick="handleRegionClick('raipur')"></path>
+                        <!-- Bastar -->
+                        <path id="bastar" d="M 170,390 Q 260,400 230,480 Q 200,580 150,580 Q 90,500 120,440 Q 90,380 170,390 Z" class="map-path fill-red-400" onclick="handleRegionClick('bastar')"></path>
+                    </g>
+                    <!-- Labels -->
+                    <text x="210" y="80" class="text-xs font-bold fill-white pointer-events-none" text-anchor="middle">Surguja</text>
+                    <text x="220" y="210" class="text-xs font-bold fill-white pointer-events-none" text-anchor="middle">Bilaspur</text>
+                    <text x="120" y="320" class="text-xs font-bold fill-white pointer-events-none" text-anchor="middle">Durg</text>
+                    <text x="250" y="340" class="text-xs font-bold fill-white pointer-events-none" text-anchor="middle">Raipur</text>
+                    <text x="170" y="480" class="text-xs font-bold fill-white pointer-events-none" text-anchor="middle">Bastar</text>
+                </svg>
+            </div>
+            <p class="text-xs text-slate-400 mt-4 text-center italic">*Stylized representation of administrative divisions</p>
+        </div>
+
+        <!-- Right Column - Information Panel -->
+        <div id="info-panel" class="w-full md:w-1/2 flex flex-col gap-6">
+            <!-- Content will be injected here by JavaScript -->
+        </div>
+
+    </main>
+
+    <script>
+        // Data for Chhattisgarh Regions
+        const cgData = {
+            overview: {
+                name: "Chhattisgarh",
+                subtitle: "The Rice Bowl of India",
+                description: "Chhattisgarh is a heavily forested state in central India known for its temples and waterfalls. It has a rich cultural heritage, diverse tribal populations, and abundant natural resources.",
+                stats: [
+                    { label: "Capital", value: "Raipur" },
+                    { label: "Districts", value: "33" },
+                    { label: "Formation", value: "Nov 1, 2000" }
+                ],
+                highlights: ["Abundant Wildlife", "Ancient Temples", "Steel Production", "Tribal Culture"]
+            },
+            regions: {
+                surguja: {
+                    name: 'Surguja Division',
+                    description: 'The northernmost part of Chhattisgarh, characterized by hilly terrain, dense forests, and a rich tribal culture. It is known for its cool climate and natural beauty.',
+                    districts: 'Surguja, Jashpur, Koriya, Surajpur, Balrampur, Manendragarh-Chirmiri-Bharatpur',
+                    touristSpots: [
+                        { name: 'Mainpat', desc: 'Known as the "Shimla of Chhattisgarh".', icon: 'mountain' },
+                        { name: 'Ramgarh', desc: 'Sita Bengra & Jogimara ancient caves.', icon: 'landmark' },
+                        { name: 'Kailash Caves', desc: 'Deep caves hidden in the forests.', icon: 'trees' }
+                    ],
+                    textColor: 'text-emerald-800',
+                    bgColor: 'bg-emerald-50',
+                    activeFill: 'fill-emerald-600',
+                    defaultFill: 'fill-emerald-400'
+                },
+                bilaspur: {
+                    name: 'Bilaspur Division',
+                    description: 'Located in the north-central part of the state. It is known for its high-quality Kosa silk and historical significance.',
+                    districts: 'Bilaspur, Mungeli, Korba, Janjgir-Champa, Raigarh, Gaurela-Pendra-Marwahi, Sakti, Sarangarh-Bilaigarh',
+                    touristSpots: [
+                        { name: 'Ratanpur', desc: 'Mahamaya Temple, an ancient Shakti Peeth.', icon: 'landmark' },
+                        { name: 'Achanakmar', desc: 'Tiger Reserve and Biosphere.', icon: 'trees' },
+                        { name: 'Kanan Pendari', desc: 'Famous zoological garden.', icon: 'map-pin' }
+                    ],
+                    textColor: 'text-blue-800',
+                    bgColor: 'bg-blue-50',
+                    activeFill: 'fill-blue-600',
+                    defaultFill: 'fill-blue-400'
+                },
+                durg: {
+                    name: 'Durg Division',
+                    description: 'The industrial heartland of Chhattisgarh. It features a blend of heavy industries and significant historical and religious sites.',
+                    districts: 'Durg, Rajnandgaon, Balod, Bemetara, Kabirdham, Mohla-Manpur-Ambagarh Chowki, Khairagarh-Chhuikhadan-Gandai',
+                    touristSpots: [
+                        { name: 'Bhilai Steel Plant', desc: 'One of India\'s largest steel plants.', icon: 'factory' },
+                        { name: 'Bhoramdeo Temple', desc: 'Known as the "Khajuraho of Chhattisgarh".', icon: 'landmark' },
+                        { name: 'Maitri Bagh', desc: 'Zoo and park established by India-USSR.', icon: 'trees' }
+                    ],
+                    textColor: 'text-orange-800',
+                    bgColor: 'bg-orange-50',
+                    activeFill: 'fill-orange-600',
+                    defaultFill: 'fill-orange-400'
+                },
+                raipur: {
+                    name: 'Raipur Division',
+                    description: 'The central and capital region of the state. It is the administrative hub and features a mix of modern infrastructure and ancient ruins.',
+                    districts: 'Raipur, Dhamtari, Mahasamund, Gariaband, Baloda Bazar',
+                    touristSpots: [
+                        { name: 'Barnawapara', desc: 'Rich wildlife sanctuary.', icon: 'trees' },
+                        { name: 'Jaitkham', desc: 'Girodhpuri Dham, a major pilgrimage site.', icon: 'landmark' },
+                        { name: 'Sirpur', desc: 'Ancient Buddhist and Hindu archaeological sites.', icon: 'landmark' }
+                    ],
+                    textColor: 'text-purple-800',
+                    bgColor: 'bg-purple-50',
+                    activeFill: 'fill-purple-600',
+                    defaultFill: 'fill-purple-400'
+                },
+                bastar: {
+                    name: 'Bastar Division',
+                    description: 'The southern part of Chhattisgarh, famous worldwide for its unique tribal heritage, dense jungles, and spectacular waterfalls.',
+                    districts: 'Bastar, Dantewada, Kanker, Kondagaon, Narayanpur, Sukma, Bijapur',
+                    touristSpots: [
+                        { name: 'Tirathgarh Falls', desc: 'Stunning block-type waterfall in Kanger Valley.', icon: 'map-pin' },
+                        { name: 'Chitrakote Falls', desc: 'The "Niagara of India".', icon: 'map-pin' },
+                        { name: 'Danteshwari Temple', desc: 'Ancient temple in Dantewada.', icon: 'landmark' }
+                    ],
+                    textColor: 'text-red-800',
+                    bgColor: 'bg-red-50',
+                    activeFill: 'fill-red-600',
+                    defaultFill: 'fill-red-400'
+                }
+            }
+        };
+
+        let activeRegion = null;
+        const infoPanel = document.getElementById('info-panel');
+
+        // Function to render the default overview
+        function renderOverview() {
+            let statsHtml = cgData.overview.stats.map(stat => `
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+                    <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">${stat.label}</p>
+                    <p class="text-lg font-bold text-slate-800">${stat.value}</p>
+                </div>
+            `).join('');
+
+            let highlightsHtml = cgData.overview.highlights.map(item => `
+                <span class="bg-emerald-100 text-emerald-800 text-sm px-3 py-1.5 rounded-full font-medium">
+                    ${item}
+                </span>
+            `).join('');
+
+            infoPanel.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-lg p-8 border border-slate-100 transition-opacity duration-500">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i data-lucide="info" class="text-emerald-600 w-7 h-7"></i>
+                        <h2 class="text-3xl font-bold text-slate-800">${cgData.overview.name}</h2>
+                    </div>
+                    <p class="text-lg text-emerald-700 font-medium mb-4">${cgData.overview.subtitle}</p>
+                    <p class="text-slate-600 leading-relaxed mb-6">${cgData.overview.description}</p>
+                    
+                    <div class="grid grid-cols-3 gap-4 mb-8">
+                        ${statsHtml}
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Key Highlights</h3>
+                        <div class="flex flex-wrap gap-2">
+                            ${highlightsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+            // Initialize icons for newly injected HTML
+            lucide.createIcons();
+        }
+
+        // Function to render specific region details
+        function renderRegionDetails(regionId) {
+            const region = cgData.regions[regionId];
+            
+            let touristSpotsHtml = region.touristSpots.map(spot => `
+                <li class="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-100">
+                    <div class="p-2 rounded-lg ${region.bgColor} ${region.textColor}">
+                        <i data-lucide="${spot.icon}" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800">${spot.name}</h4>
+                        <p class="text-sm text-slate-500">${spot.desc}</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="ml-auto text-slate-300 self-center w-4 h-4"></i>
+                </li>
+            `).join('');
+
+            infoPanel.innerHTML = `
+                <div class="rounded-2xl shadow-lg p-8 border border-slate-100 transition-opacity duration-500 bg-white">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-3xl font-bold ${region.textColor}">
+                            ${region.name}
+                        </h2>
+                        <button onclick="handleRegionClick(null)" class="text-sm bg-slate-100 hover:bg-slate-200 text-slate-600 py-1.5 px-3 rounded-full transition-colors cursor-pointer">
+                            Close X
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 rounded-xl mb-6 ${region.bgColor}">
+                        <p class="text-slate-700 leading-relaxed">
+                            ${region.description}
+                        </p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Key Districts</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            ${region.districts}
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Notable Tourist Spots</h3>
+                        <ul class="space-y-3">
+                            ${touristSpotsHtml}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            // Initialize icons for newly injected HTML
+            lucide.createIcons();
+        }
+
+        // Function to handle map clicks
+        window.handleRegionClick = function(regionId) {
+            // Toggle off if clicking the already active region
+            if (activeRegion === regionId) {
+                activeRegion = null;
+            } else {
+                activeRegion = regionId;
+            }
+
+            // Update UI Panel
+            if (activeRegion) {
+                renderRegionDetails(activeRegion);
+            } else {
+                renderOverview();
+            }
+
+            // Update Map Colors
+            Object.keys(cgData.regions).forEach(key => {
+                const pathElement = document.getElementById(key);
+                const regionConfig = cgData.regions[key];
+                
+                // Reset classes
+                pathElement.classList.remove(regionConfig.activeFill, regionConfig.defaultFill, 'active-region');
+                
+                if (activeRegion === key) {
+                    pathElement.classList.add(regionConfig.activeFill, 'active-region');
+                } else {
+                    pathElement.classList.add(regionConfig.defaultFill);
+                }
+            });
+        };
+
+        // Initialize the app on load
+        renderOverview();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
+
